@@ -12,13 +12,14 @@ router = APIRouter()
 
 
 class TelegramAuthInput(BaseModel):
-    id: int
+    id: int | None = None
     first_name: str | None = None
     last_name: str | None = None
     username: str | None = None
     photo_url: str | None = None
-    auth_date: int
-    hash: str
+    auth_date: int | None = None
+    hash: str | None = None
+    init_data: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -27,24 +28,52 @@ class AuthResponse(BaseModel):
     tariff: str
 
 
+def _auth_data_from_init_data(init_data: str) -> dict | None:
+    from urllib.parse import parse_qs
+    parsed = parse_qs(init_data, keep_blank_values=True)
+    out = {}
+    for k, v in parsed.items():
+        if k == "user":
+            import json
+            u = json.loads(v[0]) if v else {}
+            out["id"] = u.get("id")
+            out["first_name"] = u.get("first_name", "")
+            out["last_name"] = u.get("last_name", "")
+            out["username"] = u.get("username", "")
+        elif k in ("auth_date", "hash"):
+            out[k] = v[0] if v else ""
+    return out if "hash" in out and "id" in out else None
+
+
 @router.post("/telegram", response_model=AuthResponse)
 async def telegram_login(
     payload: TelegramAuthInput,
     db: AsyncSession = Depends(get_db),
 ):
-    auth_data = payload.model_dump()
-    if not verify_telegram_auth(auth_data):
-        raise HTTPException(status_code=401, detail="Invalid Telegram auth")
-    result = await db.execute(
-        select(User).where(User.telegram_id == payload.id)
-    )
+    if payload.init_data:
+        auth_data = _auth_data_from_init_data(payload.init_data)
+        if not auth_data or not verify_telegram_auth(auth_data):
+            raise HTTPException(status_code=401, detail="Invalid Telegram init_data")
+        telegram_id = int(auth_data["id"])
+    elif payload.id is not None and payload.hash:
+        auth_data = payload.model_dump(exclude={"init_data"})
+        auth_data = {k: v for k, v in auth_data.items() if v is not None}
+        if not verify_telegram_auth(auth_data):
+            raise HTTPException(status_code=401, detail="Invalid Telegram auth")
+        telegram_id = payload.id
+    else:
+        raise HTTPException(status_code=400, detail="Provide init_data or telegram id+hash")
+    result = await db.execute(select(User).where(User.telegram_id == telegram_id))
     user = result.scalar_one_or_none()
     if not user:
+        fn = auth_data.get("first_name") or ""
+        ln = auth_data.get("last_name") or ""
+        un = auth_data.get("username") or ""
         user = User(
-            telegram_id=payload.id,
-            username=payload.username,
-            first_name=payload.first_name,
-            last_name=payload.last_name,
+            telegram_id=telegram_id,
+            username=un,
+            first_name=fn,
+            last_name=ln,
         )
         db.add(user)
         await db.flush()

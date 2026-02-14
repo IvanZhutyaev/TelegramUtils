@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --growthkit-bg: #0d1117;
+  --growthkit-card: #161b22;
+  --growthkit-accent: #0088cc;
+}
+
+body {
+  background: var(--growthkit-bg);
+  color: #e6edf3;
+}
