@@ -171,3 +171,45 @@ export interface AudienceOverlapItem {
 export function getAudienceOverlap(channelId: number): Promise<{ channel_id: number; overlaps: AudienceOverlapItem[] }> {
   return api<{ channel_id: number; overlaps: AudienceOverlapItem[] }>(`/api/v1/competitors/audience-overlap?channel_id=${channelId}`);
 }
+
+export interface ScoutChannel {
+  username: string;
+  title: string | null;
+  subscribers_count: number | null;
+  er_estimate: number | null;
+  relevance_score: number;
+}
+
+export function getPartnerScout(channelId: number, limit?: number): Promise<ScoutChannel[]> {
+  const q = limit != null ? `&limit=${limit}` : "";
+  return api<ScoutChannel[]>(`/api/v1/partners/scout?channel_id=${channelId}${q}`);
+}
+
+export interface NegotiationOut {
+  id: number;
+  from_channel_id: number;
+  to_channel_username: string;
+  proposed_text: string | null;
+  status: string;
+  created_at: string;
+  from_channel_title?: string | null;
+}
+
+export function createNegotiation(fromChannelId: number, toChannelUsername: string, proposedText?: string): Promise<NegotiationOut> {
+  return api<NegotiationOut>("/api/v1/partners/negotiation", {
+    method: "POST",
+    body: JSON.stringify({ from_channel_id: fromChannelId, to_channel_username: toChannelUsername, proposed_text: proposedText || null }),
+  });
+}
+
+export function listNegotiations(direction: "sent" | "received"): Promise<{ items: NegotiationOut[]; direction: string }> {
+  return api<{ items: NegotiationOut[]; direction: string }>(`/api/v1/partners/negotiation?direction=${direction}`);
+}
+
+export function acceptNegotiation(requestId: number): Promise<{ status: string }> {
+  return api(`/api/v1/partners/negotiation/${requestId}/accept`, { method: "POST" });
+}
+
+export function declineNegotiation(requestId: number): Promise<{ status: string }> {
+  return api(`/api/v1/partners/negotiation/${requestId}/decline`, { method: "POST" });
+}

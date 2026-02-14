@@ -78,6 +78,12 @@ export default function DashboardPage() {
         >
           Конкуренты и бенчмарк
         </Link>
+        <Link
+          href="/dashboard/partners"
+          className="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-growthkit-card"
+        >
+          Пиар и нетворкинг
+        </Link>
       </nav>
     </main>
   );
