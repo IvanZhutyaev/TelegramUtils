@@ -72,6 +72,12 @@ export default function DashboardPage() {
         >
           Генератор постов
         </Link>
+        <Link
+          href="/dashboard/competitors"
+          className="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-growthkit-card"
+        >
+          Конкуренты и бенчмарк
+        </Link>
       </nav>
     </main>
   );
