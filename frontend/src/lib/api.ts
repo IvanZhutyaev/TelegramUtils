@@ -48,6 +48,41 @@ export function generatePost(topic: string, styleHint?: string): Promise<{ text:
   });
 }
 
+export function viralHypothesis(topic: string, niche?: string): Promise<{ text: string; generated_at: string }> {
+  return api<{ text: string; generated_at: string }>("/api/v1/content/viral-hypothesis", {
+    method: "POST",
+    body: JSON.stringify({ topic, niche }),
+  });
+}
+
+export function repurposeContent(sourceText: string, targetFormat: string): Promise<{ text: string; target_format: string; generated_at: string }> {
+  return api("/api/v1/content/repurpose", {
+    method: "POST",
+    body: JSON.stringify({ source_text: sourceText, target_format: targetFormat }),
+  });
+}
+
+export function smartSandwich(postContext: string): Promise<{ comments: { first: string; second: string; third: string }; generated_at: string }> {
+  return api("/api/v1/content/smart-sandwich", {
+    method: "POST",
+    body: JSON.stringify({ post_context: postContext }),
+  });
+}
+
+export function reputationTemplates(negativeComment: string): Promise<{ templates: string[]; generated_at: string }> {
+  return api("/api/v1/content/reputation-templates", {
+    method: "POST",
+    body: JSON.stringify({ negative_comment: negativeComment }),
+  });
+}
+
+export function massPersonalReply(baseComment: string, count?: number): Promise<{ replies: string[]; generated_at: string }> {
+  return api("/api/v1/content/mass-personal-reply", {
+    method: "POST",
+    body: JSON.stringify({ base_comment: baseComment, count: count ?? 5 }),
+  });
+}
+
 export interface HeatmapCell {
   hour_utc: number;
   day_of_week: number;
