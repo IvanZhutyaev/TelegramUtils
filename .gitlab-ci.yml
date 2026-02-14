@@ -1,0 +1,50 @@
+stages:
+  - test
+  - build
+
+variables:
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  BOT_IMAGE: $CI_REGISTRY_IMAGE/telegram-bot
+
+test:backend:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - cd backend
+    - pip install -r requirements.txt
+  script:
+    - python -c "from app.main import app; print('OK')"
+
+test:frontend:
+  stage: test
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run build
+
+build:backend:
+  stage: build
+  image: docker:24
+  services: [docker:24-dind]
+  script:
+    - docker build -t $BACKEND_IMAGE:$CI_COMMIT_SHA ./backend
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_SHA
+
+build:frontend:
+  stage: build
+  image: docker:24
+  services: [docker:24-dind]
+  script:
+    - docker build -t $FRONTEND_IMAGE:$CI_COMMIT_SHA ./frontend
+    - docker push $FRONTEND_IMAGE:$CI_COMMIT_SHA
+
+build:bot:
+  stage: build
+  image: docker:24
+  services: [docker:24-dind]
+  script:
+    - docker build -t $BOT_IMAGE:$CI_COMMIT_SHA ./telegram-bot
+    - docker push $BOT_IMAGE:$CI_COMMIT_SHA
